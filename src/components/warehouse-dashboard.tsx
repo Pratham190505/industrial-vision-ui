@@ -306,7 +306,7 @@ function ChartBlock({ title, children }: { title: string; children: React.ReactN
 export function WarehouseDashboard() {
   const [active, setActive] = useState("Dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [warehouse, setWarehouse] = useState(warehouses[0]);
+  const [warehouse, setWarehouse] = useState("North Distribution Center");
 
   const selectNavigation = (item: string) => { setActive(item); setMobileOpen(false); };
 
