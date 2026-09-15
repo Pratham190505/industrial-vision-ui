@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   Pause,
   Play,
-  ScanLine,
   ShieldCheck,
   Warehouse,
   X,
@@ -48,71 +47,14 @@ import {
   alerts,
   inventoryData,
   kpis,
-  navigationItems,
   warehouses,
   zoneOccupancy,
 } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
+import { WarehouseSidebar } from "@/components/warehouse-sidebar";
 
 const iconButtonClass =
   "border-border bg-panel/80 text-muted-foreground shadow-none hover:bg-surface-hover hover:text-foreground";
-
-function Brand() {
-  return (
-    <div className="flex h-18 items-center gap-3 border-b border-sidebar-border px-5">
-      <div className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground shadow-amber">
-        <ScanLine className="size-5" aria-hidden="true" />
-      </div>
-      <div className="min-w-0">
-        <div className="truncate text-sm font-bold text-sidebar-foreground">WarehouseVision</div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">AI Command Center</div>
-      </div>
-    </div>
-  );
-}
-
-function Sidebar({ active, onSelect, mobile = false }: { active: string; onSelect: (item: string) => void; mobile?: boolean }) {
-  return (
-    <aside className={cn("flex h-full flex-col bg-sidebar", mobile ? "w-full" : "fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border lg:flex")}>
-      <Brand />
-      <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Main navigation">
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Operations</p>
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          const selected = active === item.label;
-          return (
-            <Button
-              key={item.label}
-              variant="ghost"
-              onClick={() => onSelect(item.label)}
-              className={cn(
-                "h-10 w-full justify-start gap-3 border-l-2 px-3 text-sm shadow-none",
-                selected
-                  ? "border-l-primary bg-sidebar-accent text-primary hover:bg-sidebar-accent hover:text-primary"
-                  : "border-l-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-              )}
-            >
-              <Icon className="size-[18px]" aria-hidden="true" />
-              {item.label}
-            </Button>
-          );
-        })}
-      </nav>
-      <div className="m-4 border-t border-sidebar-border pt-4">
-        <div className="flex items-center gap-3 rounded-md border border-success/20 bg-success/5 px-3 py-3">
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-50" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-success" />
-          </span>
-          <div>
-            <p className="text-xs font-semibold text-sidebar-foreground">AI Engine Online</p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">All systems nominal</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 function MetricCard({ metric }: { metric: (typeof kpis)[number] }) {
   const Icon = metric.icon;
@@ -304,17 +246,14 @@ function Legend({ color, label }: { color: string; label: string }) { return <sp
 function ChartBlock({ title, children }: { title: string; children: React.ReactNode }) { return <div className="p-5"><p className="mb-4 text-xs font-medium text-foreground">{title}</p><div className="h-52">{children}</div></div>; }
 
 export function WarehouseDashboard() {
-  const [active, setActive] = useState("Dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [warehouse, setWarehouse] = useState("North Distribution Center");
-
-  const selectNavigation = (item: string) => { setActive(item); setMobileOpen(false); };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground">
-        <Sidebar active={active} onSelect={selectNavigation} />
-        {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} /><div className="absolute inset-y-0 left-0 w-72 border-r border-sidebar-border"><Sidebar active={active} onSelect={selectNavigation} mobile /><Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="absolute right-3 top-4 text-muted-foreground" aria-label="Close menu"><X /></Button></div></div>}
+        <WarehouseSidebar active="Dashboard" />
+        {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} /><div className="absolute inset-y-0 left-0 w-72 border-r border-sidebar-border"><WarehouseSidebar active="Dashboard" mobile onNavigate={() => setMobileOpen(false)} /><Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="absolute right-3 top-4 text-muted-foreground" aria-label="Close menu"><X /></Button></div></div>}
 
         <main className="relative min-h-screen lg:ml-64">
           <div className="fixed inset-0 bg-cover bg-center lg:left-64" style={{ backgroundImage: `url(${warehouseAsset.url})` }} aria-hidden="true" />
@@ -339,7 +278,6 @@ export function WarehouseDashboard() {
 
             <div className="mx-auto max-w-[1600px] space-y-5 p-4 sm:p-6 xl:p-8">
               <div className="md:hidden"><Select value={warehouse} onValueChange={setWarehouse}><SelectTrigger className="border-border bg-card/95 text-xs"><SelectValue /></SelectTrigger><SelectContent>{warehouses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></div>
-              {active !== "Dashboard" && <div className="flex items-center gap-2 border border-primary/30 bg-primary/10 px-4 py-3 text-xs text-primary"><span className="font-semibold">{active}</span><span className="text-muted-foreground">preview selected — dashboard data remains visible</span></div>}
               <section className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-5" aria-label="Key performance indicators">{kpis.map((metric) => <MetricCard key={metric.label} metric={metric} />)}</section>
               <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(330px,0.75fr)]"><CameraPanel /><SafetyAlerts /></div>
               <div className="grid items-start gap-5 xl:grid-cols-[minmax(300px,0.72fr)_minmax(0,2fr)]"><ZoneOccupancy /><Analytics /></div>
