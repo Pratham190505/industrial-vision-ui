@@ -141,7 +141,7 @@ function DetectionEvents() {
 
 export function LiveCameraPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [camera, setCamera] = useState(cameras[0]);
+  const [camera, setCamera] = useState("CAM-01 | Main Warehouse");
 
   return (
     <TooltipProvider>
