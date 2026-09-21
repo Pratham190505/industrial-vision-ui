@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 const routeByLabel = {
   Dashboard: "/",
   "Live Camera": "/live-camera",
+  Inventory: "/inventory",
+  Safety: "/safety",
+  Analytics: "/analytics",
 } as const;
 
 function Brand() {

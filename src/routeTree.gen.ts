@@ -10,11 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as LiveCameraRouteImport } from './routes/live-camera'
+import { Route as SafetyRouteImport } from './routes/safety'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveCameraRoute = LiveCameraRouteImport.update({
@@ -22,31 +35,49 @@ const LiveCameraRoute = LiveCameraRouteImport.update({
   path: '/live-camera',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SafetyRoute = SafetyRouteImport.update({
+  id: '/safety',
+  path: '/safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/inventory': typeof InventoryRoute
   '/live-camera': typeof LiveCameraRoute
+  '/safety': typeof SafetyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/inventory': typeof InventoryRoute
   '/live-camera': typeof LiveCameraRoute
+  '/safety': typeof SafetyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/inventory': typeof InventoryRoute
   '/live-camera': typeof LiveCameraRoute
+  '/safety': typeof SafetyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/live-camera'
+  fullPaths: '/' | '/analytics' | '/inventory' | '/live-camera' | '/safety'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/live-camera'
-  id: '__root__' | '/' | '/live-camera'
+  to: '/' | '/analytics' | '/inventory' | '/live-camera' | '/safety'
+  id:
+    '__root__' | '/' | '/analytics' | '/inventory' | '/live-camera' | '/safety'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
+  InventoryRoute: typeof InventoryRoute
   LiveCameraRoute: typeof LiveCameraRoute
+  SafetyRoute: typeof SafetyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +89,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/live-camera': {
       id: '/live-camera'
       path: '/live-camera'
@@ -65,12 +110,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveCameraRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/safety': {
+      id: '/safety'
+      path: '/safety'
+      fullPath: '/safety'
+      preLoaderRoute: typeof SafetyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
+  InventoryRoute: InventoryRoute,
   LiveCameraRoute: LiveCameraRoute,
+  SafetyRoute: SafetyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
