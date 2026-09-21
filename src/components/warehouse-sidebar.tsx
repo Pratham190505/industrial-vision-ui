@@ -11,6 +11,8 @@ const routeByLabel = {
   Inventory: "/inventory",
   Safety: "/safety",
   Analytics: "/analytics",
+  Reports: "/reports",
+  Settings: "/settings",
 } as const;
 
 function Brand() {
@@ -21,18 +23,37 @@ function Brand() {
       </div>
       <div className="min-w-0">
         <div className="truncate text-sm font-bold text-sidebar-foreground">WarehouseVision</div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">AI Command Center</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+          AI Command Center
+        </div>
       </div>
     </div>
   );
 }
 
-export function WarehouseSidebar({ active, mobile = false, onNavigate }: { active: string; mobile?: boolean; onNavigate?: () => void }) {
+export function WarehouseSidebar({
+  active,
+  mobile = false,
+  onNavigate,
+}: {
+  active: string;
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
   return (
-    <aside className={cn("flex h-full flex-col bg-sidebar", mobile ? "w-full" : "fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border lg:flex")}>
+    <aside
+      className={cn(
+        "flex h-full flex-col bg-sidebar",
+        mobile
+          ? "w-full"
+          : "fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border lg:flex",
+      )}
+    >
       <Brand />
       <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Main navigation">
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Operations</p>
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Operations
+        </p>
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const selected = active === item.label;
@@ -42,15 +63,24 @@ export function WarehouseSidebar({ active, mobile = false, onNavigate }: { activ
               ? "border-l-primary bg-sidebar-accent text-primary hover:bg-sidebar-accent hover:text-primary"
               : "border-l-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
           );
-          const content = <><Icon className="size-[18px]" aria-hidden="true" />{item.label}</>;
+          const content = (
+            <>
+              <Icon className="size-[18px]" aria-hidden="true" />
+              {item.label}
+            </>
+          );
           const route = routeByLabel[item.label as keyof typeof routeByLabel];
 
           return route ? (
             <Button key={item.label} variant="ghost" asChild className={classes}>
-              <Link to={route} onClick={onNavigate}>{content}</Link>
+              <Link to={route} onClick={onNavigate}>
+                {content}
+              </Link>
             </Button>
           ) : (
-            <Button key={item.label} variant="ghost" className={classes} onClick={onNavigate}>{content}</Button>
+            <Button key={item.label} variant="ghost" className={classes} onClick={onNavigate}>
+              {content}
+            </Button>
           );
         })}
       </nav>

@@ -5,9 +5,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "WarehouseVision AI | Warehouse Monitoring" },
-      { name: "description", content: "Real-time warehouse monitoring and operational intelligence dashboard." },
+      {
+        name: "description",
+        content: "Real-time warehouse monitoring and operational intelligence dashboard.",
+      },
       { property: "og:title", content: "WarehouseVision AI Command Center" },
-      { property: "og:description", content: "Real-time warehouse monitoring and operational intelligence dashboard." },
+      {
+        property: "og:description",
+        content: "Real-time warehouse monitoring and operational intelligence dashboard.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
