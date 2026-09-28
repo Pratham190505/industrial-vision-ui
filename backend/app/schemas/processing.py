@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -18,6 +18,23 @@ class ProcessingStatusResponse(BaseModel):
     message: str = "Processing video."
 
 
+class TrackingSummaryResponse(BaseModel):
+    """Tracking statistics returned in the processing result payload."""
+    enabled: bool = False
+    tracker_type: str = "none"
+    unique_track_count: int = 0
+    max_active_tracks: int = 0
+    tracks_by_class: Dict[str, int] = Field(default_factory=dict)
+    tracked_detections: int = 0
+    frames_with_tracks: int = 0
+    average_objects_per_frame: float = 0.0
+
+
+from app.schemas.safety import SafetySummary
+from app.schemas.ppe import PPESummary
+from app.schemas.inventory import InventorySummary
+
+
 class ProcessingResultResponse(BaseModel):
     job_id: str
     status: str
@@ -26,6 +43,10 @@ class ProcessingResultResponse(BaseModel):
     processed_frames: int = 0
     detection_count: int = 0
     duration_seconds: float = 0.0
+    tracking: Optional[TrackingSummaryResponse] = None
+    safety: Optional[SafetySummary] = None
+    ppe: Optional[PPESummary] = None
+    inventory: Optional[InventorySummary] = None
     error_message: Optional[str] = None
 
 

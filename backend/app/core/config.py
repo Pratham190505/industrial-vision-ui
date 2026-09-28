@@ -50,6 +50,45 @@ class Settings(BaseSettings):
     MAX_VIDEO_SIZE_MB: int = 200
     VIDEO_FRAME_INTERVAL: int = 1
 
+    # Object Tracking (ByteTrack / BoT-SORT)
+    TRACKER_TYPE: str = "bytetrack"
+    TRACKER_CONFIDENCE_THRESHOLD: float = 0.25
+    TRACKER_IOU_THRESHOLD: float = 0.5
+    TRACKER_MAX_AGE: int = 30  # informational; ByteTrack uses its YAML config internally
+
+    # Safety Monitoring
+    SAFETY_ENABLED: bool = True
+    PERSON_CLASSES: str = "person"
+    FORKLIFT_CLASSES: str = "forklift"
+    PROXIMITY_WARNING_DISTANCE: float = 100.0
+    COLLISION_WARNING_DISTANCE: float = 50.0
+    RESTRICTED_ZONE_ENABLED: bool = True
+    EVENT_COOLDOWN_SECONDS: float = 5.0
+    VELOCITY_WINDOW_FRAMES: int = 5
+
+    # PPE Compliance Monitoring
+    PPE_ENABLED: bool = True
+    PPE_MODEL_PATH: str = ""  # empty = use main model if it has PPE classes
+    PPE_HELMET_CLASSES: str = "helmet,safety helmet"
+    PPE_VEST_CLASSES: str = "vest,safety vest"
+    PPE_GLOVE_CLASSES: str = "gloves,glove"
+    PPE_SHOE_CLASSES: str = "boots,safety shoes"
+    REQUIRED_PPE: str = "helmet,vest"
+    PPE_ASSOCIATION_IOU_THRESHOLD: float = 0.10
+    PPE_MISSING_CONFIRMATION_FRAMES: int = 5
+    PPE_EVENT_COOLDOWN_SECONDS: float = 10.0
+
+    # Inventory Monitoring
+    INVENTORY_ENABLED: bool = True
+    INVENTORY_CLASSES: str = "box,pallet,crate"
+    INVENTORY_CONFIDENCE_THRESHOLD: float = 0.40
+    INVENTORY_COUNT_MODE: str = "visible"
+    INVENTORY_SNAPSHOT_INTERVAL_SECONDS: float = 10.0
+    INVENTORY_CHANGE_THRESHOLD: int = 1
+    INVENTORY_LOW_STOCK_ENABLED: bool = True
+    INVENTORY_EVENT_COOLDOWN_SECONDS: float = 10.0
+    INVENTORY_THRESHOLDS_JSON: str = '{"box": 5, "pallet": 2, "crate": 3}'
+
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
@@ -96,6 +135,49 @@ class Settings(BaseSettings):
     @property
     def max_video_size_bytes(self) -> int:
         return self.MAX_VIDEO_SIZE_MB * 1024 * 1024
+
+    @property
+    def person_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.PERSON_CLASSES.split(",") if c.strip()}
+
+    @property
+    def forklift_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.FORKLIFT_CLASSES.split(",") if c.strip()}
+
+    @property
+    def ppe_helmet_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.PPE_HELMET_CLASSES.split(",") if c.strip()}
+
+    @property
+    def ppe_vest_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.PPE_VEST_CLASSES.split(",") if c.strip()}
+
+    @property
+    def ppe_glove_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.PPE_GLOVE_CLASSES.split(",") if c.strip()}
+
+    @property
+    def ppe_shoe_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.PPE_SHOE_CLASSES.split(",") if c.strip()}
+
+    @property
+    def required_ppe_set(self) -> set:
+        return {c.strip().lower() for c in self.REQUIRED_PPE.split(",") if c.strip()}
+
+    @property
+    def inventory_classes_set(self) -> set:
+        return {c.strip().lower() for c in self.INVENTORY_CLASSES.split(",") if c.strip()}
+
+    @property
+    def inventory_thresholds(self) -> dict:
+        import json
+        try:
+            parsed = json.loads(self.INVENTORY_THRESHOLDS_JSON)
+            if isinstance(parsed, dict):
+                return {str(k).strip().lower(): int(v) for k, v in parsed.items()}
+        except Exception:
+            pass
+        return {"box": 5, "pallet": 2, "crate": 3}
 
     def __repr__(self) -> str:
         # Safe repr avoiding printing secrets

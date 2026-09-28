@@ -8,6 +8,7 @@ from app.schemas.processing import (
     ProcessingJobItem,
     ProcessingResultResponse,
     ProcessingStatusResponse,
+    TrackingSummaryResponse,
 )
 from app.services.processing_service import ProcessingService
 
@@ -136,6 +137,33 @@ async def get_processing_result(
             error_message=job.get("error_message") or "Video processing failed.",
         )
 
+    # Build tracking summary from stored data
+    tracking_response = None
+    tracking_data = job.get("tracking")
+    if tracking_data and isinstance(tracking_data, dict):
+        tracking_response = TrackingSummaryResponse(**tracking_data)
+
+    # Build safety summary from stored data
+    from app.schemas.safety import SafetySummary
+    safety_response = None
+    safety_data = job.get("safety")
+    if safety_data and isinstance(safety_data, dict):
+        safety_response = SafetySummary(**safety_data)
+
+    # Build PPE summary from stored data
+    from app.schemas.ppe import PPESummary
+    ppe_response = None
+    ppe_data = job.get("ppe")
+    if ppe_data and isinstance(ppe_data, dict):
+        ppe_response = PPESummary(**ppe_data)
+
+    # Build Inventory summary from stored data
+    from app.schemas.inventory import InventorySummary
+    inventory_response = None
+    inv_data = job.get("inventory")
+    if inv_data and isinstance(inv_data, dict):
+        inventory_response = InventorySummary(**inv_data)
+
     return ProcessingResultResponse(
         job_id=job_id,
         status="completed",
@@ -144,6 +172,10 @@ async def get_processing_result(
         processed_frames=job.get("processed_frames", 0),
         detection_count=job.get("detection_count", 0),
         duration_seconds=job.get("duration_seconds", 0.0),
+        tracking=tracking_response,
+        safety=safety_response,
+        ppe=ppe_response,
+        inventory=inventory_response,
         error_message=None,
     )
 

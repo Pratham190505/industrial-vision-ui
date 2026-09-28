@@ -83,6 +83,16 @@ class ProcessingWorker:
                     loop,
                 )
 
+        from app.services.safety_service import SafetyService
+        safety_service = SafetyService(db)
+        user_id = job.get("user_id", "")
+        if user_id:
+            try:
+                active_zones = await safety_service.get_active_zones_for_user(user_id)
+                self.pipeline.set_safety_zones(active_zones)
+            except Exception as zone_err:
+                logger.warning("Could not load safety zones for job %s: %s", job_id, zone_err)
+
         try:
             stats = await anyio.to_thread.run_sync(
                 self.pipeline.process_video,
@@ -93,20 +103,74 @@ class ProcessingWorker:
             )
 
             finished_at = datetime.now(timezone.utc)
+            update_fields = {
+                "status": "completed",
+                "progress": 100,
+                "processed_frames": stats.get("processed_frames", 0),
+                "total_frames": stats.get("total_frames", 0),
+                "detection_count": stats.get("detection_count", 0),
+                "duration_seconds": stats.get("duration_seconds", 0.0),
+                "completed_at": finished_at,
+                "updated_at": finished_at,
+            }
+
+            # Persist tracking summary if available
+            tracking_data = stats.get("tracking")
+            if tracking_data is not None:
+                update_fields["tracking"] = tracking_data
+
+            # Persist safety summary if available
+            safety_data = stats.get("safety")
+            if safety_data is not None:
+                update_fields["safety"] = safety_data
+
+            # Persist PPE summary and worker compliance if available
+            ppe_data = stats.get("ppe")
+            if ppe_data is not None:
+                update_fields["ppe"] = ppe_data
+            ppe_workers = stats.get("ppe_workers")
+            if ppe_workers is not None:
+                update_fields["ppe_workers"] = ppe_workers
+
+            # Persist safety events
+            safety_events = stats.get("safety_events", [])
+            if safety_events and user_id:
+                try:
+                    await safety_service.persist_events(safety_events, job_id, user_id)
+                except Exception as ev_err:
+                    logger.error("Failed to persist safety events for job %s: %s", job_id, ev_err)
+
+            # Persist PPE violation events
+            ppe_events = stats.get("ppe_events", [])
+            if ppe_events and user_id:
+                try:
+                    from app.services.ppe_service import PPEService
+                    ppe_service = PPEService(db)
+                    await ppe_service.persist_ppe_events(ppe_events, job_id, user_id)
+                except Exception as ppe_err:
+                    logger.error("Failed to persist PPE events for job %s: %s", job_id, ppe_err)
+
+            # Persist inventory summary, snapshots, and events
+            inventory_data = stats.get("inventory")
+            if inventory_data is not None:
+                update_fields["inventory"] = inventory_data
+
+            inventory_snapshots = stats.get("inventory_snapshots", [])
+            inventory_events = stats.get("inventory_events", [])
+            if (inventory_snapshots or inventory_events) and user_id:
+                try:
+                    from app.services.inventory_service import InventoryService
+                    inv_service = InventoryService(db)
+                    if inventory_snapshots:
+                        await inv_service.persist_snapshots(inventory_snapshots, job_id, user_id)
+                    if inventory_events:
+                        await inv_service.persist_events(inventory_events, job_id, user_id)
+                except Exception as inv_err:
+                    logger.error("Failed to persist inventory snapshots/events for job %s: %s", job_id, inv_err)
+
             await collection.update_one(
                 {"_id": job_id},
-                {
-                    "$set": {
-                        "status": "completed",
-                        "progress": 100,
-                        "processed_frames": stats.get("processed_frames", 0),
-                        "total_frames": stats.get("total_frames", 0),
-                        "detection_count": stats.get("detection_count", 0),
-                        "duration_seconds": stats.get("duration_seconds", 0.0),
-                        "completed_at": finished_at,
-                        "updated_at": finished_at,
-                    }
-                },
+                {"$set": update_fields},
             )
             logger.info("Successfully completed processing job %s.", job_id)
 

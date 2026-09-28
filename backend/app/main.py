@@ -44,9 +44,13 @@ async def lifespan(app: FastAPI):
         from app.core.database import get_database
         from app.services.input_service import InputService
         from app.services.processing_service import ProcessingService
+        from app.services.safety_service import SafetyService
+        from app.services.inventory_service import InventoryService
         db_instance = get_database()
         await InputService(db_instance).ensure_indexes()
         await ProcessingService(db_instance).ensure_indexes()
+        await SafetyService(db_instance).ensure_indexes()
+        await InventoryService(db_instance).ensure_indexes()
     except Exception as exc:
         logger.warning("Could not initialize collection indexes: %s", exc)
 

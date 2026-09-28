@@ -16,6 +16,7 @@ class CollectionName(str, Enum):
     SAFETY_ZONES = "safety_zones"
     SAFETY_EVENTS = "safety_events"
     INVENTORY_SNAPSHOTS = "inventory_snapshots"
+    INVENTORY_EVENTS = "inventory_events"
     ALERTS = "alerts"
     REPORTS = "reports"
 

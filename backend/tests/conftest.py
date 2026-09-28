@@ -80,6 +80,13 @@ class MockAsyncCollection:
                 return type("UpdateResult", (), {"modified_count": 1})()
         return type("UpdateResult", (), {"modified_count": 0})()
 
+    async def delete_one(self, query):
+        for _id, doc in list(self._docs.items()):
+            if all(doc.get(k) == v for k, v in query.items()):
+                del self._docs[_id]
+                return type("DeleteResult", (), {"deleted_count": 1})()
+        return type("DeleteResult", (), {"deleted_count": 0})()
+
 
 class MockAsyncDatabase:
     def __init__(self):
