@@ -89,6 +89,11 @@ class Settings(BaseSettings):
     INVENTORY_EVENT_COOLDOWN_SECONDS: float = 10.0
     INVENTORY_THRESHOLDS_JSON: str = '{"box": 5, "pallet": 2, "crate": 3}'
 
+    # Live Webcam Monitoring
+    LIVE_FRAME_INTERVAL_MS: int = 250
+    MAX_LIVE_FRAME_SIZE_MB: int = 2
+    LIVE_SESSION_TIMEOUT_SECONDS: int = 60
+
     @field_validator("JWT_SECRET_KEY")
     @classmethod
     def validate_jwt_secret(cls, v: str, info) -> str:
@@ -135,6 +140,10 @@ class Settings(BaseSettings):
     @property
     def max_video_size_bytes(self) -> int:
         return self.MAX_VIDEO_SIZE_MB * 1024 * 1024
+
+    @property
+    def max_live_frame_size_bytes(self) -> int:
+        return self.MAX_LIVE_FRAME_SIZE_MB * 1024 * 1024
 
     @property
     def person_classes_set(self) -> set:

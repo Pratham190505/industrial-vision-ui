@@ -10,6 +10,7 @@ from app.api.routes import (
     health,
     inputs,
     inventory,
+    live,
     processing,
     safety,
 )
@@ -46,11 +47,13 @@ async def lifespan(app: FastAPI):
         from app.services.processing_service import ProcessingService
         from app.services.safety_service import SafetyService
         from app.services.inventory_service import InventoryService
+        from app.services.live_session_service import LiveSessionService
         db_instance = get_database()
         await InputService(db_instance).ensure_indexes()
         await ProcessingService(db_instance).ensure_indexes()
         await SafetyService(db_instance).ensure_indexes()
         await InventoryService(db_instance).ensure_indexes()
+        await LiveSessionService(db_instance).ensure_indexes()
     except Exception as exc:
         logger.warning("Could not initialize collection indexes: %s", exc)
 
@@ -105,6 +108,7 @@ def create_application() -> FastAPI:
     app.include_router(cameras.router, prefix=v1_prefix)
     app.include_router(safety.router, prefix=v1_prefix)
     app.include_router(inventory.router, prefix=v1_prefix)
+    app.include_router(live.router, prefix=v1_prefix)
     app.include_router(analytics.router, prefix=v1_prefix)
 
     @app.get("/", tags=["Root"])

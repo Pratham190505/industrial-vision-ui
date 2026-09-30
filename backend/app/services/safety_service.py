@@ -160,7 +160,13 @@ class SafetyService:
     # Safety Events Persistence and Retrieval
     # -------------------------------------------------------------------------
 
-    async def persist_events(self, events: List[Dict[str, Any]], job_id: str, user_id: str) -> int:
+    async def persist_events(
+        self,
+        events: List[Dict[str, Any]],
+        job_id: Optional[str] = None,
+        user_id: str = "",
+        session_id: Optional[str] = None,
+    ) -> int:
         if not events:
             return 0
 
@@ -171,6 +177,7 @@ class SafetyService:
             docs.append({
                 "_id": event_id,
                 "job_id": job_id,
+                "session_id": session_id or job_id,
                 "user_id": user_id,
                 "event_type": ev.get("event_type", "safety_event"),
                 "severity": ev.get("severity", "warning"),

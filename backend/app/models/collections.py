@@ -19,6 +19,7 @@ class CollectionName(str, Enum):
     INVENTORY_EVENTS = "inventory_events"
     ALERTS = "alerts"
     REPORTS = "reports"
+    LIVE_SESSIONS = "live_sessions"
 
 
 def get_collection(

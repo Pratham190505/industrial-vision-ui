@@ -440,11 +440,79 @@ It is essential to understand the difference between the metrics provided by com
 
 ---
 
-### Processing Limitations
+## Live Webcam Monitoring & Real-Time Edge Processing
 
-- **In-Process Workers**: Video jobs are executed using FastAPI `BackgroundTasks` within the server process. While ideal for development and single-instance deployments, high-throughput production clusters should use a distributed worker queue (e.g. Celery / Temporal).
-- **Domain Classes**: Standard YOLO weights detect common COCO classes (person, vehicle, chair). Specialized warehouse objects (pallets, hardhats, vests) require custom-trained weights.
-- **Audio Tracks**: Video re-encoding strips audio tracks as industrial vision monitoring evaluates only visual feed channels.
+WarehouseVision AI supports real-time monitoring directly from browser webcams without requiring FastAPI to capture host server devices or stream raw video files.
+
+### 1. Architecture Flow
+
+```text
+Browser Client
+  ↓ navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+<video> element
+  ↓ Offscreen HTML5 Canvas frame extraction (JPEG, quality 0.7)
+HTTP POST /api/v1/live/frame (~4 FPS, LIVE_FRAME_INTERVAL_MS=250)
+  ↓
+FastAPI Backend
+  ↓ Content-type & frame size validation (<= 2MB)
+YOLO Detection + ByteTrack/BoT-SORT (Session-Isolated Tracker)
+  ↓
+Safety Analyzer + PPE Analyzer + Inventory Analyzer
+  ↓
+JSON LiveFrameResponse (bounding boxes, track IDs, safety hazards, counts)
+  ↓
+Browser React UI
+  ↓
+Dynamic Canvas Overlay (<video> + <canvas> coordinate-scaled overlay)
+```
+
+### 2. Key Architecture Principles
+
+1. **Browser Camera Access**:
+   - The browser captures user webcam video via `navigator.mediaDevices.getUserMedia()`.
+   - The backend **never** calls `cv2.VideoCapture(0)`. Server-side camera capture would access the server machine's hardware, not the operator's browser camera.
+   - Microphone/audio access is explicitly avoided (`audio: false`).
+
+2. **Controlled Frame Sampling**:
+   - Webcams are sampled at a controlled interval (`LIVE_FRAME_INTERVAL_MS=250`, ~4 FPS).
+   - The frontend implements a sequential request loop: if a frame is currently in-flight to FastAPI, intermediate frames are skipped to eliminate request buildup.
+   - Live monitoring is intentionally lower FPS than native camera rates (30/60 FPS) to balance YOLO inference latency and network overhead.
+
+3. **Session-Isolated Tracking**:
+   - Tracker instances are strictly isolated per active live session (`LiveSessionState`).
+   - Track IDs persist from frame to frame within the session.
+   - Trackers are automatically destroyed and cleaned up when a session terminates or times out.
+
+4. **Transient Frames vs. Aggregated Events**:
+   - Individual webcam frames are **never stored to disk or MongoDB**.
+   - MongoDB only stores session aggregates (`live_sessions`) and meaningful events governed by cooldown logic.
+
+### 3. Live Monitoring Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/live/sessions` | Create a new active live session with isolated tracker and analyzer state |
+| `POST` | `/api/v1/live/frame` | Process an individual webcam frame (`multipart/form-data`: `session_id`, `frame`) |
+| `GET` | `/api/v1/live/sessions/{session_id}` | Retrieve live session metadata, duration, and status |
+| `POST` | `/api/v1/live/sessions/{session_id}/stop` | Terminate session, clean up tracker resources, and record final summary |
+| `GET` | `/api/v1/live/sessions` | List live sessions created by the authenticated user (paginated) |
+
+### 4. Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `LIVE_FRAME_INTERVAL_MS` | `250` | Sampling interval between webcam frames in milliseconds (~4 FPS) |
+| `MAX_LIVE_FRAME_SIZE_MB` | `2` | Maximum allowable payload size for an individual webcam frame |
+| `LIVE_SESSION_TIMEOUT_SECONDS` | `60` | Inactivity threshold after which an idle live session is automatically expired |
+
+### 5. Production Notes & Important Limitations
+
+1. **Browser Permissions**: Webcam access requires explicit user permission. In production, browsers mandate HTTPS for `getUserMedia` outside of `localhost`.
+2. **Single-Process Registry**: The MVP uses an in-memory session registry (`_active_sessions`) suitable for single-instance backend deployments. For horizontal clustering across multiple backend pods, session state and tracker assignment must be coordinated via a distributed state or sticky session routing layer.
+3. **Inference Latency & FPS**: Effective monitoring FPS is bounded by inference hardware (CPU vs. GPU) and network latency.
+4. **Coordinate Distances**: Pixel coordinates and bounding box Euclidean distances represent 2D camera projections, not calibrated physical metric distances.
+5. **Collision Warnings**: Collision alerts are heuristic risk estimations based on 2D bounding-box velocity vectors.
+6. **Visible vs. Physical Inventory**: Inventory counts reflect objects detected in the current camera frame, not guaranteed physical warehouse inventory.
 
 ---
 
@@ -460,3 +528,4 @@ With verbose output and per-test timing:
 ```powershell
 pytest -v
 ```
+
